@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "python-demo"
+version = "0.1.0"
+description = ""
+authors = ["Malcolm Ramsay <m@malramsay.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.92.0"
+sqlmodel = "^0.0.8"
+passlib = "^1.7.4"
+fit2gpx = "^0.0.7"
+uvicorn = {extras = ["standard"], version = "^0.20.0"}
+python-jose = "^3.3.0"
+python-multipart = "^0.0.5"
+argon2-cffi = "^21.3.0"
+fastapi-login = "^1.8.3"
+Jinja2 = "^3.1.2"
+scikit-learn = "^1.2.1"
+geopy = "^2.3.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2"
+pyright = "^1.1.294"
+mypy = "^1.0.0"
+ruff = "^0.0.247"
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.0.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

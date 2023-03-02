@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block header_extras %}
+<script src="https://cdn.jsdelivr.net/npm/vega@5.22.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/vega-lite@5.6.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/vega-embed@6.21.2"></script>
+{% endblock %}
+
+{% block body %}
+<h1>{{ course.name }}</h1>
+
+<div id="vis"></div>
+
+<script type="text/javascript">
+  var yourVlSpec = {
+    $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+    description: "A simple bar chart with embedded data.",
+    width: 640,
+    height: 640,
+    params: [{
+      name: "grid",
+      select: "interval",
+      bind: "scales"
+    }],
+    data: {
+      url: "/course/{{ course.id }}/points"
+    },
+    transform: [
+      {calculate: "3.6*datum.speed", as: "speed_kmh"},
+    ],    
+    mark: {type: "point", tooltip: {context: "data"}},
+    encoding: {
+      x: {field: "lon", type: "quantitative", scale: {zero: false}},
+      y: {field: "lat", type: "quantitative", scale: {zero: false}},
+      color: {field: "speed_kmh", type: "quantitative", title: "Speed km/h"},
+      order: {field: "time", type: "temporal"}
+    }
+  };
+  vegaEmbed("#vis", yourVlSpec);
+</script>
+
+{% endblock %}

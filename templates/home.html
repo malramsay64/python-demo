@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block body %}
+        <h1>Welcome {{username}}</h1>
+
+    <form id='form' hx-encoding='multipart/form-data' hx-post='/course'>
+        <input type='file' name='file'>
+        <input type='text' name='name'>
+        <button>
+            Upload
+        </button>
+    </form>
+
+    {% include "courses.html" %}
+
+{% endblock %}

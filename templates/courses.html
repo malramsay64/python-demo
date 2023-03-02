@@ -1,0 +1,16 @@
+<table>
+  <tr>
+    <th scope='col'>Date</th>
+    <th scope='col'>Activity</th>
+  </tr>
+  {% for course in courses %}
+  <tr>
+    <td>
+      {{ course.date }}
+    </td>
+    <td>
+      <a href="/course/{{ course.id }}">{{ course.name }}</a>
+    </td>
+  </tr>
+  {% endfor %}
+</table>

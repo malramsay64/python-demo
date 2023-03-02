@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block body %}
+
+<div id="form">
+<form id="predict">
+  <label for="speed">Speed</label>
+  <input type="range" min="0" max="60" id="speed" name="speed"/>
+  <label for="gradient">Gradient</label>
+  <input type="range" min="-5" max="5" id="gradient" name="gradient"/>
+  <button type="submit" hx-post="/predict" hx-target="#prediction" hx-swap="innerHTML">Predict</button>
+</form>
+<output form="predict" id="prediction"></output>
+</div>
+
+{% endblock %}
