@@ -1,12 +1,10 @@
-<div  class="container">
-    <div class="row">
-        <div class="row col s6">
-            <h1>{{ success_msg }} {{ USERNAME }}</h1>
-        </div>
-    </div>
-    <div class="row col s6">
-        <div class="h3">
-            <a href="{{ path_route }}"> {{ path_msg }}</a>
-        </div>
-    </div>
+<div class="flex flex-col items-center justify-center p-6 mx-auto">
+  <div class="w-full max-w-md bg-white rounded-lg">
+    <h1 class="text-lg text-center">{{ success_msg }} {{ USERNAME }}</h1>
+    <form action="{{ path_route }}">
+      <button type="submit"
+        class="w-full bg-blue-600 text-white hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">{{
+        path_msg }}</button>
+    </form>
+  </div>
 </div>

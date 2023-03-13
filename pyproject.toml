@@ -28,6 +28,9 @@ ruff = "^0.0.247"
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.0.1"
 
+[tool.ruff]
+select = ["E", "F", "I", "S", "RUF"]
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"

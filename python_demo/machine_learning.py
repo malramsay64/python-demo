@@ -1,8 +1,6 @@
-from .models import MLModel, User, CoursePoints
+import geopy.distance
 import pandas as pd
 from sklearn.linear_model import LinearRegression
-from sqlmodel import Session, select
-import geopy.distance
 from sqlmodel import SQLModel
 
 
@@ -16,22 +14,27 @@ def generate_model(objs: list[SQLModel]):
     df = (
         sqmodel_to_df(objs)
         .assign(
-                speed_kmh=lambda x: x["speed"] * 3.6,
-                point=lambda x: x.apply(lambda row: geopy.Point(row["lat"], row["lon"]), axis=1),
+            speed_kmh=lambda x: x["speed"] * 3.6,
+            point=lambda x: x.apply(
+                lambda row: geopy.Point(row["lat"], row["lon"]), axis=1
+            ),
         )
         # .groupby("course_id")
         .assign(
-                point_prev= lambda x: x["point"].shift(-1),
-                altitude_prev= lambda x: x["altitude"].shift(-1),
+            point_prev=lambda x: x["point"].shift(-1),
+            altitude_prev=lambda x: x["altitude"].shift(-1),
         )
         .dropna(subset=["point_prev", "power"])
         .assign(
-                distance= lambda x: x.apply(
-                    lambda row: geopy.distance.distance(row["point_prev"], row["point"]).meters, axis=1
-                ),
-                altitude_gain= lambda x: x["altitude_prev"] - x["altitude"],
+            distance=lambda x: x.apply(
+                lambda row: geopy.distance.distance(
+                    row["point_prev"], row["point"]
+                ).meters,
+                axis=1,
+            ),
+            altitude_gain=lambda x: x["altitude_prev"] - x["altitude"],
         )
-        .assign(gradient= lambda x: x["altitude_gain"] / x["distance"] * 100)
+        .assign(gradient=lambda x: x["altitude_gain"] / x["distance"] * 100)
     )
     model = LinearRegression()
     X = df[["speed_kmh", "gradient"]]

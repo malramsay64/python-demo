@@ -1,44 +1,48 @@
-from .models import Token, User, Course, MLModel
-from .course import decode_fit
-from passlib.hash import argon2
-from jose import jwt, JWTError
-from .models import User, TokenData, UserNew, CoursePoints
-from .machine_learning import generate_model
+import os
+from datetime import timedelta
+
+from dotenv import load_dotenv
 from fastapi import (
     Depends,
     FastAPI,
-    HTTPException,
-    status,
     Form,
-    Response,
+    HTTPException,
     Request,
     UploadFile,
+    status,
 )
-import pandas as pd
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from sqlmodel import SQLModel, create_engine, Session, select
 from fastapi_login import LoginManager
 from fastapi_login.exceptions import InvalidCredentialsException
+from sqlmodel import Session, create_engine, select
 
-from dotenv import dotenv_values
+from .authentication import get_password_hash, verify_password
+from .course import decode_fit
+from .machine_learning import generate_model
+from .models import Course, CoursePoints, MLModel, User, create_db_and_tables
 
+# Configuration for the templating.
 templates = Jinja2Templates(directory="templates")
 
+# Configuration for the authentication.
+# This is particularly important because we don't want to include the SECRET_KEY
+# within the git repository. This allows us to set the value within a `.env`
+# configuration file while also having the ability to set this through
+# environment variables.
+load_dotenv()
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return argon2.verify(plain_password, hashed_password)
-
-
-def get_password_hash(password: str) -> str:
-    return argon2.hash(password)
-
-
-config = dotenv_values(".env")
-SECRET_KEY = config["SECRET_KEY"]
+# This is where we load the value of the environment variable for the secret
+# key. This could have either been in our .env file and automatically loaded
+# above, or in production defined as an environment variable.
+SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
+manager = LoginManager(SECRET_KEY, token_url="/auth", use_cookie=True)
 
+
+# Configuration of the database
+# Here we are using sqlite as it is included within python and there are no
+# separate services to start and manage.
 sqlite_file_name = "database.db"
 sqlite_url = f"sqlite:///{sqlite_file_name}"
 
@@ -46,18 +50,13 @@ sqlite_url = f"sqlite:///{sqlite_file_name}"
 connect_args = {"check_same_thread": False}
 engine = create_engine(sqlite_url, echo=True, connect_args=connect_args)
 
-manager = LoginManager(SECRET_KEY, token_url="/auth", use_cookie=True)
-
-
-def create_db_and_tables():
-    SQLModel.metadata.create_all(engine)
-
 
 def get_session():
     with Session(engine) as session:
         yield session
 
 
+# Configure and setup the FastAPI application
 app = FastAPI()
 
 
@@ -71,7 +70,7 @@ def login(
     # we are using the same function to retrieve the user
     user = load_user(data.username, db)
     if not user:
-        raise InvalidCredentialsException  # you can also use your own HTTPException
+        raise InvalidCredentialsException
     elif not verify_password(data.password, user.hashed_password):
         raise InvalidCredentialsException
 
@@ -82,22 +81,42 @@ def login(
         "path_msg": "Click here to go to your Home Page!",
     }
     response = templates.TemplateResponse("success.html", context)
-    access_token = manager.create_access_token(data={"sub": data.username})
+    # When the user reconnects, this value is used to determine who the user is
+    # and that they have logged in. It is provided in the form of a cookie that
+    # is attached to every following request. The expiry time of the cookie can
+    # be managed although the time should be kept relatively short.
+    access_token = manager.create_access_token(
+        data={"sub": data.username}, expires=timedelta(minutes=60)
+    )
+    # We have to tell the login manager to set the cookie manually.
     manager.set_cookie(response, access_token)
     return response
 
 
 @manager.user_loader(session=next(get_session()))
 def load_user(username: str, session):
+    """Ensure the user is loaded to provide access to properties.
+
+    Note:
+        When working with the user object and other sessions, that is when
+        trying to update the user within a function call, the session used is
+        different to the session that is used here causing problems. The way
+        around this is to use the user_id property rather than trying to update
+        the user directly.
+
+    """
     return session.exec(select(User).where(User.username == username)).one()
 
 
+# When the FastAPI application starts, is will run the "startup" events. For
+# this application we need to ensure the database has been created and the
+# schema is up to date.
 @app.on_event("startup")
 def on_startup():
-    create_db_and_tables()
+    create_db_and_tables(engine)
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/")
 def index(request: Request):
     context = {
         "request": request,
@@ -105,7 +124,7 @@ def index(request: Request):
     return templates.TemplateResponse("index.html", context)
 
 
-@app.get("/signup", response_class=HTMLResponse)
+@app.get("/signup")
 def signup(request: Request):
     context = {
         "request": request,
@@ -113,7 +132,7 @@ def signup(request: Request):
     return templates.TemplateResponse("sign_up.html", context)
 
 
-@app.post("/user", response_class=HTMLResponse)
+@app.post("/user")
 def new_user(
     request: Request,
     username=Form(),
@@ -123,26 +142,23 @@ def new_user(
     if session.exec(select(User).where(User.username == username)).first() is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User Exists")
 
+    # Create the new user and store within the database. This doesn't persist
+    # until we call the session.commit() method.
     session.add(
         User(
             username=username,
             hashed_password=get_password_hash(password),
         )
     )
-
     session.commit()
-    # return RedirectResponse("/")
-    # TODO verify success and handle errors
-    response = templates.TemplateResponse(
-        "success.html",
-        {
-            "request": request,
-            "success_msg": "Registration Successful!",
-            "path_route": "/",
-            "path_msg": "Click here to login!",
-        },
-    )
-    return response
+
+    context = {
+        "request": request,
+        "success_msg": "Registration Successful!",
+        "path_route": "/",
+        "path_msg": "Click here to login!",
+    }
+    return templates.TemplateResponse("success.html", context)
 
 
 @app.post("/course")
@@ -154,6 +170,12 @@ def post_course(
     session: Session = Depends(get_session),
     user: User = Depends(manager),
 ):
+    """Upload and store a course for the currently logged in user.
+
+    This allows us to upload a file and persist the data within the database.
+    """
+    # The UploadFile class handles creating a temporary file for us, so we can use
+    # the file property to pass this temporary file to any other function.
     points = decode_fit(file.file)
     if name is not None:
         name = name
@@ -162,15 +184,17 @@ def post_course(
     course = Course(user_id=user.id, name=name, points=points)
     session.add(course)
     session.commit()
+    # Ensure all the database created values like ids and relationships are
+    # refreshed and up to date.
     session.refresh(course)
 
+    # This context is used by the template to fill in values
     context = {
         "request": request,
         "success_msg": "Registration Successful!",
         "path_route": f"/course/{course.id}",
         "path_msg": "Click here to view the course!",
     }
-
     return templates.TemplateResponse("success.html", context)
 
 
@@ -198,14 +222,11 @@ def read_courses(
             detail="Course does not belong to current user.",
         )
 
-    response = templates.TemplateResponse(
-        "course.html",
-        {
-            "request": request,
-            "course": course,
-        },
-    )
-    return response
+    context = {
+        "request": request,
+        "course": course,
+    }
+    return templates.TemplateResponse("course.html", context)
 
 
 @app.get("/course/{course_id}/points")
@@ -230,17 +251,14 @@ def get_predict(
     current_user: User = Depends(manager),
     session: Session = Depends(get_session),
 ):
-    response = templates.TemplateResponse(
-        "predict.html",
-        {
-            "request": request,
-        },
-    )
-    return response
+    context = {
+        "request": request,
+    }
+    return templates.TemplateResponse("predict.html", context)
 
 
 @app.post("/predict")
-def get_predict(
+def get_predict_post(
     *,
     speed: float = Form(),
     gradient: float = Form(),
@@ -268,4 +286,13 @@ def get_predict(
         session.commit()
         session.refresh(ml_model)
 
-    return ml_model.model.predict([[speed, gradient]])[0]
+    # Calculate the predicted power output
+    power = ml_model.model.predict([[speed, gradient]])[0]
+
+    context = {
+        "request": request,
+        "power": power,
+        "speed": speed,
+        "gradient": gradient,
+    }
+    return templates.TemplateResponse("prediction.html", context)

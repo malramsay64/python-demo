@@ -2,15 +2,34 @@
 
 {% block body %}
 
-<div id="form">
-<form id="predict">
-  <label for="speed">Speed</label>
-  <input type="range" min="0" max="60" id="speed" name="speed"/>
-  <label for="gradient">Gradient</label>
-  <input type="range" min="-5" max="5" id="gradient" name="gradient"/>
-  <button type="submit" hx-post="/predict" hx-target="#prediction" hx-swap="innerHTML">Predict</button>
-</form>
-<output form="predict" id="prediction"></output>
+<div class="flex flex-col items-center justify-center p-6 mx-auto">
+  <div class="w-full max-w-md bg-white rounded-lg shadow p-6">
+    <h1 class="text-xl font-bold">Predicting Power Output</h1>
+    <div id="form">
+      <form id="predict" class="py-6 space-y-6">
+        <div>
+          <label for="speed" class="block mb-2 text-sm font-medium text-gray-900">Speed</label>
+          <div class="flex flex-row">
+            <input type="range" default="20" min="0" max="60" id="speed" name="speed" class="flex-grow"
+              oninput="speedValue.innerText = this.value;" />
+            <p class="font-medium text-gray-900 min-w-[6em] text-right"><span id="speedValue">20</span> km/h</p>
+          </div>
+        </div>
+        <div>
+          <label for="gradient" class="block mb-2 text-sm font-medium text-gray-900">Gradient</label>
+          <div class="flex flex-row">
+            <input type="range" min="-5" max="5" default="0" id="gradient" name="gradient" class="flex-grow"
+              oninput="gradientValue.innerText = this.value;" />
+            <p class="font-medium text-gray-900 min-w-[6em] text-right"><span id="gradientValue">0</span> %</p>
+          </div>
+        </div>
+        <button type="submit" hx-post="/predict" hx-target="#prediction" hx-swap="innerHTML"
+          class="w-full bg-blue-600 text-white hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Predict</button>
+      </form>
+      <hr class="p-4" />
+      <output form="predict" id="prediction"></output>
+    </div>
+  </div>
 </div>
 
 {% endblock %}

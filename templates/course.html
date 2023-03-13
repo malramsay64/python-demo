@@ -7,36 +7,41 @@
 {% endblock %}
 
 {% block body %}
-<h1>{{ course.name }}</h1>
 
-<div id="vis"></div>
+<div class="flex flex-col items-center justify-center p-6 mx-auto">
+  <div class="rounded-lg shadow bg-white p-6 my-6">
+    <h1 class="text-center text-xl font-bold">{{ course.name }}</h1>
 
-<script type="text/javascript">
-  var yourVlSpec = {
-    $schema: "https://vega.github.io/schema/vega-lite/v5.json",
-    description: "A simple bar chart with embedded data.",
-    width: 640,
-    height: 640,
-    params: [{
-      name: "grid",
-      select: "interval",
-      bind: "scales"
-    }],
-    data: {
-      url: "/course/{{ course.id }}/points"
-    },
-    transform: [
-      {calculate: "3.6*datum.speed", as: "speed_kmh"},
-    ],    
-    mark: {type: "point", tooltip: {context: "data"}},
-    encoding: {
-      x: {field: "lon", type: "quantitative", scale: {zero: false}},
-      y: {field: "lat", type: "quantitative", scale: {zero: false}},
-      color: {field: "speed_kmh", type: "quantitative", title: "Speed km/h"},
-      order: {field: "time", type: "temporal"}
-    }
-  };
-  vegaEmbed("#vis", yourVlSpec);
-</script>
+    <div id="vis" class="mx-auto"></div>
+
+    <script type="text/javascript">
+      var yourVlSpec = {
+        $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+        description: "A simple bar chart with embedded data.",
+        width: 640,
+        height: 640,
+        params: [{
+          name: "grid",
+          select: "interval",
+          bind: "scales"
+        }],
+        data: {
+          url: "/course/{{ course.id }}/points"
+        },
+        transform: [
+          {calculate: "3.6*datum.speed", as: "speed_kmh"},
+        ],
+        mark: {type: "point", tooltip: {context: "data"}},
+        encoding: {
+          x: {field: "lon", type: "quantitative", scale: {zero: false}, title: "Longitude"},
+          y: {field: "lat", type: "quantitative", scale: {zero: false}, title: "Latitude"},
+          color: {field: "speed_kmh", type: "quantitative", title: "Speed km/h"},
+          order: {field: "time", type: "temporal"}
+        }
+      };
+      vegaEmbed("#vis", yourVlSpec);
+    </script>
+  </div>
+</div>
 
 {% endblock %}
