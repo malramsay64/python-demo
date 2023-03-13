@@ -7,17 +7,17 @@ from fit2gpx import Converter
 
 from .models import CoursePoints
 
-
 # This is taking the definition of the fit_to_dataframes from the fit2gpx
 # package and modifying it to suit our use case, primarily the checking of the
 # file extension which in the case of the temporary file created when uploading
 # isn't used. This removes the check for the extension and we then assign the
-# updated method. 
-# 
+# updated method.
+#
 # This approach is definitely abusing some of the inner workings of python;
 # however, is also demonstrates that nearly anything is possible. The main
 # reason this is a bad idea is that the underlying class could change,
 # and we then have to work out why and fix it.
+
 
 def fit_to_dataframes(self, fname: PathLike) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Takes path to a FIT file returning DataFrames for lap and point data
@@ -25,7 +25,7 @@ def fit_to_dataframes(self, fname: PathLike) -> Tuple[pd.DataFrame, pd.DataFrame
     Parameters:
         fname (str): string representing file path of the FIT file
     Returns:
-        dfs (tuple): df containing data about the laps , df containing data 
+        dfs (tuple): df containing data about the laps , df containing data
             about the individual points.
     """
     data_points = []
