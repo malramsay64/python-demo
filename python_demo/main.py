@@ -76,7 +76,7 @@ def login(
 
     context = {
         "request": request,
-        "success_msg": "Registration Successful!",
+        "success_msg": "Login Successful!",
         "path_route": "/home",
         "path_msg": "Click here to go to your Home Page!",
     }
@@ -163,6 +163,11 @@ def new_user(
 
 @app.post("/course")
 def post_course(
+    # Normally arguments without a default value have to come before those that don't,
+    # this is to properly handle positional and keyword arguments. By putting the *,
+    # we are forcing all these arguments to be specified by keyword, that is 
+    # post_course(file="filename", name="test", ...). This then means we can put
+    # them in any order.
     *,
     file: UploadFile,
     name: str | None = None,
@@ -191,7 +196,7 @@ def post_course(
     # This context is used by the template to fill in values
     context = {
         "request": request,
-        "success_msg": "Registration Successful!",
+        "success_msg": "Course upload Successful!",
         "path_route": f"/course/{course.id}",
         "path_msg": "Click here to view the course!",
     }
