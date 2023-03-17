@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 
 from sqlmodel import Column, Field, PickleType, Relationship, SQLModel
 
@@ -69,7 +69,7 @@ class Course(SQLModel, table=True):
     # using the property decorator. This should only be used where the cost of computing
     # the value is low rather than for complex transformations.
     @property
-    def date(self) -> datetime | None:
+    def date(self) -> date | None:
         """Use the date of the first point as the date of the course."""
         # Handle the case where there are no points in the course. This takes
         # the better to ask forgiveness than permission approach.

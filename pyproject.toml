@@ -5,11 +5,11 @@ description = ""
 authors = ["Malcolm Ramsay <m@malramsay.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.10"
 fastapi = "^0.92.0"
 sqlmodel = "^0.0.8"
 passlib = "^1.7.4"
-fit2gpx = "^0.0.7"
+fitdecode = "^0.10.0"
 uvicorn = {extras = ["standard"], version = "^0.20.0"}
 python-jose = "^3.3.0"
 python-multipart = "^0.0.5"
@@ -31,7 +31,11 @@ jupyterlab = "^3.6.1"
 altair = "^4.2.2"
 
 [tool.ruff]
-select = ["E", "F", "I", "S", "RUF"]
+select = ["E", "F", "I", "S", "RUF", "B", "W", "C90", "YTT", "C4", "DTZ", "NPY"]
+ignore= [
+  # FastAPI depends on having functions within the default arguments
+  "B008"
+]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

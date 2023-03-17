@@ -35,9 +35,15 @@ load_dotenv()
 # This is where we load the value of the environment variable for the secret
 # key. This could have either been in our .env file and automatically loaded
 # above, or in production defined as an environment variable.
-SECRET_KEY = os.getenv("SECRET_KEY")
+# This needs to be passed in as bytes, so we do the conversion here.
+SECRET_KEY = bytes(os.getenv("SECRET_KEY", ""), "utf-8")
 ALGORITHM = "HS256"
-manager = LoginManager(SECRET_KEY, token_url="/auth", use_cookie=True)
+# Ruff likely incorrectly determines that this is a hardcoded password, it is
+# the location of the url where the authentication should take place, hence
+# the S105 lint is ignored.
+TOKEN_URL = "/auth" # noqa: S105
+# Ruff detects 
+manager = LoginManager(SECRET_KEY, token_url=TOKEN_URL, use_cookie=True)
 
 
 # Configuration of the database
@@ -94,10 +100,11 @@ def login(
 
 
 @manager.user_loader(session=next(get_session()))
-def load_user(username: str, session):
+def load_user(username: str, session) -> User:
     """Ensure the user is loaded to provide access to properties.
 
     Note:
+    ----
         When working with the user object and other sessions, that is when
         trying to update the user within a function call, the session used is
         different to the session that is used here causing problems. The way
@@ -221,7 +228,7 @@ def read_courses(
     session: Session = Depends(get_session),
 ):
     course = session.get(Course, course_id)
-    if course.user != current_user:
+    if course is None or course.user != current_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Course does not belong to current user.",
@@ -241,7 +248,7 @@ def read_course_points(
     session: Session = Depends(get_session),
 ) -> list[CoursePoints]:
     course = session.get(Course, course_id)
-    if course.user != current_user:
+    if course is None or course.user != current_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Course does not belong to current user.",
@@ -270,7 +277,7 @@ def get_predict_post(
     request: Request,
     current_user: User = Depends(manager),
     session: Session = Depends(get_session),
-) -> float:
+):
     ml_model = session.exec(
         select(MLModel).where(MLModel.user_id == current_user.id)
     ).one_or_none()
