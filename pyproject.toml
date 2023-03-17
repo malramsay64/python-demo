@@ -18,6 +18,7 @@ fastapi-login = "^1.8.3"
 Jinja2 = "^3.1.2"
 scikit-learn = "^1.2.1"
 geopy = "^2.3.0"
+pandas = "^1.5.3"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^6.2"
