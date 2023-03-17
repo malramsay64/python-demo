@@ -6,7 +6,7 @@ to running a web application.
 
 ## Installation Prerequisites
 
-This project requires python 3.9 or above and is tested
+This project requires python 3.10 or above and is tested
 to install on linux, macos, and windows.
 
 The project uses [poetry] to manage 
